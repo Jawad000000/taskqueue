@@ -1,0 +1,2 @@
+OK so first package which is the producer it is responsible for accepting the request from the user or the client and it will validate or verify it Yeah it will push it into the queue
+Burger is someone who will like take the dogs from the queue and it will try to execute it and if the dogs has not been executed it will have some type of retrial logic and it will retry it and even then then it will have some kind of like error handling mechanism etcetera Now the shared Here we will like make some modules or like files or dependencies which like the both the other models need
