@@ -1,22 +1,27 @@
-from shared.schemas import Job
 import asyncio
+import logging
 
-async def process_job(job:Job):
+from shared.schemas import Job
+
+logger = logging.getLogger("worker.handlers")
+
+
+async def process_job(job: Job):
     if job.payload is None:
         raise ValueError("payload is empty")
-    
+
     match job.type:
         case "send_email":
             await asyncio.sleep(2)
-            print(f"Sending email to {job.payload['to']}")
+            logger.info(f"Sending email to {job.payload.get('to')}")
 
         case "resize_image":
             await asyncio.sleep(1)
-            print("Resizing image...")
+            logger.info("Resizing image...")
 
         case "generate_pdf":
             await asyncio.sleep(1)
-            print("Generating PDF...")
-        
+            logger.info("Generating PDF...")
+
         case _:
-            raise ValueError(f"Unsupported job type: {job.type}")
+            raise ValueError(f"Unsupported job type: {job.type}")
