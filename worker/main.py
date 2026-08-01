@@ -31,7 +31,10 @@ async def worker_loop():
                 await redis_client.lpush("queue:default", job_dec)
                 print(f"Retrying job {job.id}, retries_left: {job.retries}")
             else:
-                print(f"Job {job.id} is dead. No retries left.")
+                job_dec = json.dumps(job.model_dump())
+                await redis_client.lpush("queue:dead", job_dec)
+                print(f"Job {job.id} is dead. Moved to Dead Letter Queue (queue:dead).")
+
 
 
         
