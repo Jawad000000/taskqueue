@@ -4,8 +4,20 @@ from fastapi import FastAPI, HTTPException
 from shared.redis_client import get_redis_client
 from shared.schemas import Job
 
-app = FastAPI()
+app = FastAPI(title="WorkQueue API")
 redis_client = get_redis_client()
+
+
+@app.get("/health")
+async def health_check():
+    try:
+        await redis_client.ping()
+        return {"status": "healthy", "redis": "connected"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Redis connection failed: {str(e)}"
+        )
+
 
 
 @app.post("/enqueue")
