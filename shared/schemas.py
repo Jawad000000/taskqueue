@@ -8,3 +8,4 @@ class Job(BaseModel):
     type: str
     retries: int = 3
     payload: dict
+    status: str = "pending"
