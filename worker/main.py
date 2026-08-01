@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import signal
 
 from shared.redis_client import get_redis_client
 from shared.schemas import Job
@@ -13,12 +14,20 @@ logging.basicConfig(
 logger = logging.getLogger("worker")
 
 redis_client = get_redis_client()
+is_running = True
+
+
+def handle_shutdown(sig, frame):
+    global is_running
+    logger.info("Shutdown signal received. Finishing current job before stopping...")
+    is_running = False
 
 
 async def worker_loop():
+    global is_running
     logger.info("Worker started. Listening for jobs on 'queue:default'...")
 
-    while True:
+    while is_running:
         result = await redis_client.brpop("queue:default", timeout=5)
 
         if result is None:
@@ -56,6 +65,15 @@ async def worker_loop():
                     f"Job {job.id} retries exhausted. Moved to Dead Letter Queue (queue:dead)."
                 )
 
+    logger.info("Worker stopped gracefully.")
+
 
 if __name__ == "__main__":
-    asyncio.run(worker_loop())
+    signal.signal(signal.SIGINT, handle_shutdown)
+    signal.signal(signal.SIGTERM, handle_shutdown)
+
+    try:
+        asyncio.run(worker_loop())
+    except KeyboardInterrupt:
+        pass
+
