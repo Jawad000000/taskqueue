@@ -6,18 +6,26 @@ A distributed background job processing system built with **FastAPI**, **Redis**
 
 ```
 Client → POST /enqueue → [Producer] → Redis Queue → [Worker] → Execute Job
+                                 ↓                         ↓
+                           Redis Hashes              Dead Letter Queue
+                            (Job Status)               (queue:dead)
 ```
 
 ## Services
 
 ### Producer
-- Exposes `POST /enqueue`
-- Accepts a job payload, assigns a UUID, pushes to Redis
+- `GET /health` — Check system and Redis health status
+- `POST /enqueue` — Accepts a job payload, assigns a UUID, initializes status tracking in Redis, and pushes to Redis queue
+- `GET /jobs/{job_id}` — Query the current status of a specific job (`pending`, `processing`, `completed`, `retrying`, `dead`)
+- `GET /dead-letter` — Retrieve failed jobs stored in the Dead Letter Queue (`queue:dead`)
 
 ### Worker
 - Polls Redis with `BRPOP`
+- Updates job status in Redis as work progresses (`processing`, `completed`, `retrying`, `dead`)
 - Executes jobs by type (`send_email`, `resize_image`, `generate_pdf`)
-- Retries failed jobs, marks as dead after retries exhausted
+- Retries failed jobs up to configured `retries` count
+- Pushes unrecoverable jobs to Dead Letter Queue (`queue:dead`)
+- Uses Python `logging` for structured output and handles `SIGINT`/`SIGTERM` for graceful shutdown
 
 ## Job Format
 
@@ -36,8 +44,8 @@ Client → POST /enqueue → [Producer] → Redis Queue → [Worker] → Execute
 
 ```
 workqueue/
-├── producer/       ← FastAPI app, /enqueue route
-├── worker/         ← polling loop, job handlers
+├── producer/       ← FastAPI app, /enqueue, /jobs, /health, /dead-letter routes
+├── worker/         ← Polling loop, handlers, status updates, DLQ, graceful shutdown
 ├── shared/         ← Job schema, Redis client
 ├── docker-compose.yml
 └── requirements.txt
@@ -68,6 +76,21 @@ curl -X POST http://localhost:8000/enqueue \
   -d '{"type": "send_email", "retries": 3, "payload": {"to": "test@example.com", "subject": "Hello"}}'
 ```
 
+**Check Job Status**
+```bash
+curl http://localhost:8000/jobs/<job_id>
+```
+
+**Check Health**
+```bash
+curl http://localhost:8000/health
+```
+
+**View Dead Letter Queue**
+```bash
+curl http://localhost:8000/dead-letter
+```
+
 ## Tech Stack
 
 - Python 3.11+
@@ -75,3 +98,4 @@ curl -X POST http://localhost:8000/enqueue \
 - Redis (via `redis.asyncio`)
 - Pydantic v2
 - Docker + docker-compose
+
