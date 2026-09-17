@@ -23,4 +23,8 @@ env/
 
 # Logs
 *.log
+logs/
 logs.txt
+
+# Pytest
+.pytest_cache/

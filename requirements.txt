@@ -40,3 +40,6 @@ urllib3==2.7.0
 uvicorn==0.47.0
 watchfiles==1.2.0
 websockets==16.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+fakeredis>=2.20.0

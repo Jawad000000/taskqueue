@@ -1,25 +1,47 @@
+version: "3.8"
+
 services:
   redis:
     image: redis:7-alpine
+    container_name: workqueue-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
 
   producer:
     build:
       context: .
       dockerfile: producer/Dockerfile
+    container_name: workqueue-producer
     ports:
       - "8000:8000"
     environment:
       - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOGS_DIR=/app/logs
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       - redis
+    restart: unless-stopped
 
   worker:
     build:
       context: .
       dockerfile: worker/Dockerfile
+    container_name: workqueue-worker
     environment:
       - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WORKER_CONCURRENCY=3
+      - LOGS_DIR=/app/logs
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       - redis
+    restart: unless-stopped
+
+volumes:
+  redis-data:
