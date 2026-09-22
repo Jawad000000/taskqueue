@@ -2,9 +2,8 @@
 
 A high-performance, distributed background job processing system built with **FastAPI**, **Redis**, and **asyncio**, featuring concurrent worker pools, CPU vs I/O dispatching, exponential backoff retries, and atomic system metrics.
 
-Inspired by [AbhinavXJ/WorkQueue](https://github.com/AbhinavXJ/WorkQueue) (written in Go), this Python implementation is engineered with enterprise reliability patterns and full feature parity.
-
 ---
+
 
 ## Architecture Overview
 
@@ -61,24 +60,6 @@ Inspired by [AbhinavXJ/WorkQueue](https://github.com/AbhinavXJ/WorkQueue) (writt
              +-------------------------------------------------------------------------+
 ```
 
----
-
-## Feature Comparison: Python WorkQueue vs Go WorkQueue
-
-| Feature | Go Version (`AbhinavXJ/WorkQueue`) | Python WorkQueue (This Project) |
-| :--- | :--- | :--- |
-| **Worker Concurrency** | 3 Goroutines | Configurable Async Worker Pool (`WORKER_CONCURRENCY=3`) |
-| **Task Routing & GIL Handling** | Go runtime threads | Hybrid Dispatcher: Asyncio for I/O + `ProcessPoolExecutor` for CPU |
-| **Job Identity & Querying** | None (Anonymous payloads) | UUID4 generation + `GET /jobs/{job_id}` |
-| **Metrics (`GET /metrics`)** | In-memory variables (data races) | Atomic Redis counters (`HINCRBY`) + pipeline queries |
-| **Failure Handling** | `log.Fatal()` (crashes entire process) | Automatic retry decrement + **Dead Letter Queue** (`queue:dead`) |
-| **Retry Strategy** | Immediate re-queuing | **Exponential Backoff** ($2^{\text{attempt}}$ seconds) via Redis Sorted Sets |
-| **Shutdown** | None (Immediate process kill) | Graceful draining of in-flight jobs on `SIGINT`/`SIGTERM` |
-| **Audit Logging** | Hardcoded `/WorkQueue/logs.txt` | Rotating file logs (`logs/worker.log` & `logs/audit.log`) + `GET /audit-logs` |
-| **API Documentation** | Manual README | Auto-generated interactive OpenAPI/Swagger at `/docs` |
-| **Testing** | None | Automated unit & integration suite with `pytest` + `fakeredis` |
-
----
 
 ## Project Structure
 
